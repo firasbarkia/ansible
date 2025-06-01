@@ -1,32 +1,25 @@
 ---
-- name: Pull MySQL from Docker Hub and push to Nexus via Podman
-  hosts: kube-node
+- name: Pull MySQL from Docker Hub and push to Nexus using skopeo
+  hosts: localhost
   become: true
   vars:
-    source_image: docker.io/library/mysql:latest
-    nexus_host: 10.110.188.231
+    source_image: docker://docker.io/library/mysql:latest
+    nexus_host: 10.110.188.231:8082
     nexus_repo: docker-hosted
-    target_image: "{{ nexus_host }}/{{ nexus_repo }}/mysql:latest"
+    target_image: "docker://{{ nexus_host }}/firas_barkia/mysql:lts"
     nexus_user: firas
     nexus_password: firas1234
 
   tasks:
 
-    - name: Ensure Podman is installed
-      package:
-        name: podman
+    - name: Install skopeo
+      apt:
+        name: skopeo
         state: present
+        update_cache: true
 
-    - name: Login to Nexus
-      shell: podman login {{ nexus_host }} -u {{ nexus_user }} -p {{ nexus_password }}
-      register: login_output
-      changed_when: "'Login Succeeded' in login_output.stdout"
+    - name: Copy image from Docker Hub to Nexus registry using skopeo
+      shell: >
+        skopeo copy {{ source_image }} {{ target_image }}
+        --dest-creds={{ nexus_user }}:{{ nexus_password }}
 
-    - name: Pull MySQL image
-      shell: podman pull {{ source_image }}
-
-    - name: Tag image for Nexus
-      shell: podman tag {{ source_image }} {{ target_image }}
-
-    - name: Push image to Nexus
-      shell: podman push {{ target_image }}
