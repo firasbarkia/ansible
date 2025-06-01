@@ -1,8 +1,4 @@
 ---
-- name: Install Podman
-  ansible.builtin.shell: |
-    apt update && apt install -y podman
-  become: true
 - name: Pull and push MySQL image using Podman on CRI-O
   hosts: localhost
   connection: local
