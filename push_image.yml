@@ -1,0 +1,30 @@
+---
+- name: Pull and push MySQL image using Podman on CRI-O
+  hosts: localhost
+  connection: local
+  vars:
+    source_image: docker.io/library/mysql:latest
+    nexus_host: 10.110.188.231
+    nexus_repo: docker-hosted
+    target_image: "{{ nexus_host }}/{{ nexus_repo }}/mysql:latest"
+    nexus_user: "firas"              # Replace with your Nexus username
+    nexus_password: "firas1234"       # Replace with your Nexus password
+
+  tasks:
+
+    - name: Login to Nexus registry
+      ansible.builtin.shell: >
+        podman login {{ nexus_host }} -u {{ nexus_user }} -p {{ nexus_password }}
+      register: login_output
+      changed_when: "'Login Succeeded' in login_output.stdout"
+
+    - name: Pull MySQL image from Docker Hub
+      ansible.builtin.shell: podman pull {{ source_image }}
+      register: pull_output
+      changed_when: "'Downloaded' in pull_output.stdout or 'Image is up to date' not in pull_output.stdout"
+
+    - name: Tag image for Nexus
+      ansible.builtin.shell: podman tag {{ source_image }} {{ target_image }}
+
+    - name: Push image to Nexus
+      ansible.builtin.shell: podman push {{ target_image }}
