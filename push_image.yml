@@ -22,4 +22,5 @@
       shell: >
         skopeo copy {{ source_image }} {{ target_image }}
         --dest-creds={{ nexus_user }}:{{ nexus_password }}
+        --dest-tls-verify=false
 
